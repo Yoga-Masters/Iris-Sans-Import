@@ -27,7 +27,7 @@ function plotLosses(lossValues, epoch, newTrainLoss, newValidationLoss) {
         'loss': newValidationLoss,
         'set': 'validation'
     });
-    vg.embed(
+    vegaEmbed(
         '#lossCanvas', {
             '$schema': 'https://vega.github.io/schema/vega-lite/v2.json',
             'data': {
@@ -71,7 +71,7 @@ function plotAccuracies(
         'accuracy': newValidationAccuracy,
         'set': 'validation'
     });
-    vg.embed(
+    vegaEmbed(
         '#accuracyCanvas', {
             '$schema': 'https://vega.github.io/schema/vega-lite/v2.json',
             'data': {

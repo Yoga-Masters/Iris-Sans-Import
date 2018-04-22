@@ -1,11 +1,8 @@
-import * as tf from '@tensorflow/tfjs';
-import * as ui from './ui';
-
 /**
  * Test whether a given URL is retrievable.
  */
-export async function urlExists(url) {
-    ui.status('Testing url ' + url);
+async function urlExists(url) {
+    status('Testing url ' + url);
     try {
         const response = await fetch(url, {
             method: 'HEAD'
@@ -21,18 +18,18 @@ export async function urlExists(url) {
  *
  * @return An instance of `tf.Model` with model topology and weights loaded.
  */
-export async function loadHostedPretrainedModel(url) {
-    ui.status('Loading pretrained model from ' + url);
+async function loadHostedPretrainedModel(url) {
+    status('Loading pretrained model from ' + url);
     try {
         const model = await tf.loadModel(url);
-        ui.status('Done loading pretrained model.');
+        status('Done loading pretrained model.');
         // We can't load a model twice due to
         // https://github.com/tensorflow/tfjs/issues/34
         // Therefore we remove the load buttons to avoid user confusion.
-        ui.disableLoadModelButtons();
+        disableLoadModelButtons();
         return model;
     } catch (err) {
         console.error(err);
-        ui.status('Loading pretrained model failed.');
+        status('Loading pretrained model failed.');
     }
 }

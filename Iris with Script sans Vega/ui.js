@@ -1,13 +1,7 @@
-import embed from 'vega-embed';
-import {
-    IRIS_CLASSES,
-    IRIS_NUM_CLASSES
-} from './data';
-
 /**
  * Clear the evaluation table.
  */
-export function clearEvaluateTable() {
+function clearEvaluateTable() {
     const tableBody = document.getElementById('evaluate-tbody');
     while (tableBody.children.length > 1) {
         tableBody.removeChild(tableBody.children[1]);
@@ -22,7 +16,7 @@ export function clearEvaluateTable() {
  * @param newTrainLoss The new training loss, as a single `Number`.
  * @param newValidationLoss The new validation loss, as a single `Number`.
  */
-export function plotLosses(lossValues, epoch, newTrainLoss, newValidationLoss) {
+function plotLosses(lossValues, epoch, newTrainLoss, newValidationLoss) {
     lossValues.push({
         'epoch': epoch,
         'loss': newTrainLoss,
@@ -33,7 +27,7 @@ export function plotLosses(lossValues, epoch, newTrainLoss, newValidationLoss) {
         'loss': newValidationLoss,
         'set': 'validation'
     });
-    embed(
+    vg.embed(
         '#lossCanvas', {
             '$schema': 'https://vega.github.io/schema/vega-lite/v2.json',
             'data': {
@@ -65,7 +59,7 @@ export function plotLosses(lossValues, epoch, newTrainLoss, newValidationLoss) {
  * @param newTrainLoss The new training accuracy, as a single `Number`.
  * @param newValidationLoss The new validation accuracy, as a single `Number`.
  */
-export function plotAccuracies(
+function plotAccuracies(
     accuracyValues, epoch, newTrainAccuracy, newValidationAccuracy) {
     accuracyValues.push({
         'epoch': epoch,
@@ -77,7 +71,7 @@ export function plotAccuracies(
         'accuracy': newValidationAccuracy,
         'set': 'validation'
     });
-    embed(
+    vg.embed(
         '#accuracyCanvas', {
             '$schema': 'https://vega.github.io/schema/vega-lite/v2.json',
             'data': {
@@ -104,7 +98,7 @@ export function plotAccuracies(
 /**
  * Get manually input Iris data from the input boxes.
  */
-export function getManualInputData() {
+function getManualInputData() {
     return [
         Number(document.getElementById('petal-length').value),
         Number(document.getElementById('petal-width').value),
@@ -113,7 +107,7 @@ export function getManualInputData() {
     ];
 }
 
-export function setManualInputWinnerMessage(message) {
+function setManualInputWinnerMessage(message) {
     const winnerElement = document.getElementById('winner');
     winnerElement.textContent = message;
 }
@@ -149,12 +143,12 @@ function renderLogits(logits, parentElement) {
     });
 }
 
-export function renderLogitsForManualInput(logits) {
+function renderLogitsForManualInput(logits) {
     const logitsElement = document.getElementById('logits');
     renderLogits(logits, logitsElement);
 }
 
-export function renderEvaluateTable(xData, yTrue, yPred, logits) {
+function renderEvaluateTable(xData, yTrue, yPred, logits) {
     const tableBody = document.getElementById('evaluate-tbody');
 
     for (let i = 0; i < yTrue.length; ++i) {
@@ -183,7 +177,7 @@ export function renderEvaluateTable(xData, yTrue, yPred, logits) {
     }
 }
 
-export function wireUpEvaluateTableCallbacks(predictOnManualInputCallback) {
+function wireUpEvaluateTableCallbacks(predictOnManualInputCallback) {
     const petalLength = document.getElementById('petal-length');
     const petalWidth = document.getElementById('petal-width');
     const sepalLength = document.getElementById('sepal-length');
@@ -237,19 +231,19 @@ export function wireUpEvaluateTableCallbacks(predictOnManualInputCallback) {
     });
 }
 
-export function loadTrainParametersFromUI() {
+function loadTrainParametersFromUI() {
     return {
         epochs: Number(document.getElementById('train-epochs').value),
         learningRate: Number(document.getElementById('learning-rate').value)
     };
 }
 
-export function status(statusText) {
+function status(statusText) {
     console.log(statusText);
     document.getElementById('demo-status').textContent = statusText;
 }
 
-export function disableLoadModelButtons() {
+function disableLoadModelButtons() {
     document.getElementById('load-pretrained-remote').style.display = 'none';
     document.getElementById('load-pretrained-local').style.display = 'none';
 }

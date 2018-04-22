@@ -1,49 +1,115 @@
 // ===================== ^^^ DATA JS VARIABLES LOAD IN ^^^ ======================
 // ============================= GLOBAL VARIABLES ===============================
 let model;
-const LOCAL_MODEL_JSON_URL = "http://localhost:1235/resources/model.json";
-const HOSTED_MODEL_JSON_URL = "https://storage.googleapis.com/tfjs-models/tfjs/iris_v1/model.json";
-// =============================== MAIN FUNCTIONS ===============================
+// ============================== MAIN FUNCTIONS ================================
 /**
  * The main function of the Iris demo.
  */
 async function iris() {
     const [xTrain, yTrain, xTest, yTest] = getIrisData(0.15);
-
-    document.getElementById('train-from-scratch')
-        .addEventListener('click', async () => {
-            model = await trainModel(xTrain, yTrain, xTest, yTest);
-            evaluateModelOnTestData(model, xTest, yTest);
-        });
-
-    if (await urlExists(HOSTED_MODEL_JSON_URL)) {
-        status('Model available: ' + HOSTED_MODEL_JSON_URL);
-        const button = document.getElementById('load-pretrained-remote');
-        button.addEventListener('click', async () => {
-            clearEvaluateTable();
-            model = await loadHostedPretrainedModel(HOSTED_MODEL_JSON_URL);
-            predictOnManualInput(model);
-        });
-        // button.style.visibility = 'visible';
-        button.style.display = 'inline-block';
-    }
-
-    // if (await urlExists(LOCAL_MODEL_JSON_URL)) {
-    //     status('Model available: ' + LOCAL_MODEL_JSON_URL);
-    //     const button = document.getElementById('load-pretrained-local');
-    //     button.addEventListener('click', async () => {
-    //         clearEvaluateTable();
-    //         model = await loadHostedPretrainedModel(LOCAL_MODEL_JSON_URL);
-    //         predictOnManualInput(model);
-    //     });
-    //     // button.style.visibility = 'visible';
-    //     button.style.display = 'inline-block';
-    // }
-
+    document.getElementById('train-from-scratch').addEventListener('click', async () => {
+        model = await trainModel(xTrain, yTrain, xTest, yTest);
+        evaluateModelOnTestData(model, xTest, yTest);
+    });
     status('Standing by.');
     wireUpEvaluateTableCallbacks(() => predictOnManualInput(model));
 }
 iris();
+// ============================ DATAUSE JS FUNCTIONS ============================
+/**
+ * Obtains Iris data, split into training and test sets.
+ *
+ * @param testSplit Fraction of the data at the end to split as test data: a
+ *   number between 0 and 1.
+ *
+ * @param return A length-4 `Array`, with
+ *   - training data as an `Array` of length-4 `Array` of numbers.
+ *   - training labels as an `Array` of numbers, with the same length as the
+ *     return training data above. Each element of the `Array` is from the set
+ *     {0, 1, 2}.
+ *   - test data as an `Array` of length-4 `Array` of numbers.
+ *   - test labels as an `Array` of numbers, with the same length as the
+ *     return test data above. Each element of the `Array` is from the set
+ *     {0, 1, 2}.
+ */
+function getIrisData(testSplit) {
+    return tf.tidy(() => {
+        const dataByClass = [];
+        const targetsByClass = [];
+        for (let i = 0; i < IRIS_CLASSES.length; ++i) {
+            dataByClass.push([]);
+            targetsByClass.push([]);
+        }
+        for (const example of IRIS_DATA) {
+            const target = example[example.length - 1];
+            const data = example.slice(0, example.length - 1);
+            dataByClass[target].push(data);
+            targetsByClass[target].push(target);
+        }
+
+        const xTrains = [];
+        const yTrains = [];
+        const xTests = [];
+        const yTests = [];
+        for (let i = 0; i < IRIS_CLASSES.length; ++i) {
+            const [xTrain, yTrain, xTest, yTest] =
+            convertToTensors(dataByClass[i], targetsByClass[i], testSplit);
+            xTrains.push(xTrain);
+            yTrains.push(yTrain);
+            xTests.push(xTest);
+            yTests.push(yTest);
+        }
+
+        const concatAxis = 0;
+        return [
+            tf.concat(xTrains, concatAxis), tf.concat(yTrains, concatAxis),
+            tf.concat(xTests, concatAxis), tf.concat(yTests, concatAxis)
+        ];
+    });
+}
+
+/**
+ * Convert Iris data arrays to `tf.Tensor`s.
+ *
+ * @param data The Iris input feature data, an `Array` of `Array`s, each element
+ *   of which is assumed to be a length-4 `Array` (for petal length, petal
+ *   width, sepal length, sepal width).
+ * @param targets An `Array` of numbers, with values from the set {0, 1, 2}:
+ *   representing the true category of the Iris flower. Assumed to have the same
+ *   array length as `data`.
+ * @param testSplit Fraction of the data at the end to split as test data: a
+ *   number between 0 and 1.
+ * @return A length-4 `Array`, with
+ *   - training data as `tf.Tensor` of shape [numTrainExapmles, 4].
+ *   - training one-hot labels as a `tf.Tensor` of shape [numTrainExamples, 3]
+ *   - test data as `tf.Tensor` of shape [numTestExamples, 4].
+ *   - test one-hot labels as a `tf.Tensor` of shape [numTestExamples, 3]
+ */
+function convertToTensors(data, targets, testSplit) {
+    const numExamples = data.length;
+    if (numExamples !== targets.length) {
+        throw new Error('data and split have different numbers of examples');
+    }
+
+    const numTestExamples = Math.round(numExamples * testSplit);
+    const numTrainExamples = numExamples - numTestExamples;
+
+    const xDims = data[0].length;
+
+    // Create a 2D `tf.Tensor` to hold the feature data.
+    const xs = tf.tensor2d(data, [numExamples, xDims]);
+
+    // Create a 1D `tf.Tensor` to hold the labels, and convert the number label
+    // from the set {0, 1, 2} into one-hot encoding (.e.g., 0 --> [1, 0, 0]).
+    const ys = tf.oneHot(tf.tensor1d(targets), IRIS_NUM_CLASSES);
+
+    // Split the data into training and test sets, using `slice`.
+    const xTrain = xs.slice([0, 0], [numTrainExamples, xDims]);
+    const xTest = xs.slice([numTrainExamples, 0], [numTestExamples, xDims]);
+    const yTrain = ys.slice([0, 0], [numTrainExamples, IRIS_NUM_CLASSES]);
+    const yTest = ys.slice([0, 0], [numTestExamples, IRIS_NUM_CLASSES]);
+    return [xTrain, yTrain, xTest, yTest];
+}
 // ============================= INDEX JS FUNCTIONS =============================
 /**
  * Train a `tf.Model` to recognize Iris flower type.
@@ -60,9 +126,7 @@ iris();
  */
 async function trainModel(xTrain, yTrain, xTest, yTest) {
     status('Training model... Please wait.');
-
     const params = loadTrainParametersFromUI();
-
     // Define the topology of the model: two dense layers.
     const model = tf.sequential();
     model.add(tf.layers.dense({
@@ -74,14 +138,12 @@ async function trainModel(xTrain, yTrain, xTest, yTest) {
         units: 3,
         activation: 'softmax'
     }));
-
     const optimizer = tf.train.adam(params.learningRate);
     model.compile({
         optimizer: optimizer,
         loss: 'categoricalCrossentropy',
         metrics: ['accuracy'],
     });
-
     const lossValues = [];
     const accuracyValues = [];
     // Call `model.fit` to train the model.
@@ -99,7 +161,6 @@ async function trainModel(xTrain, yTrain, xTest, yTest) {
             },
         }
     });
-
     status('Model training complete.');
     return model;
 }
@@ -154,101 +215,6 @@ async function evaluateModelOnTestData(model, xTest, yTest) {
     });
 
     predictOnManualInput(model);
-}
-// ============================ DATAUSE JS FUNCTIONS ============================
-/**
- * Convert Iris data arrays to `tf.Tensor`s.
- *
- * @param data The Iris input feature data, an `Array` of `Array`s, each element
- *   of which is assumed to be a length-4 `Array` (for petal length, petal
- *   width, sepal length, sepal width).
- * @param targets An `Array` of numbers, with values from the set {0, 1, 2}:
- *   representing the true category of the Iris flower. Assumed to have the same
- *   array length as `data`.
- * @param testSplit Fraction of the data at the end to split as test data: a
- *   number between 0 and 1.
- * @return A length-4 `Array`, with
- *   - training data as `tf.Tensor` of shape [numTrainExapmles, 4].
- *   - training one-hot labels as a `tf.Tensor` of shape [numTrainExamples, 3]
- *   - test data as `tf.Tensor` of shape [numTestExamples, 4].
- *   - test one-hot labels as a `tf.Tensor` of shape [numTestExamples, 3]
- */
-function convertToTensors(data, targets, testSplit) {
-    const numExamples = data.length;
-    if (numExamples !== targets.length) {
-        throw new Error('data and split have different numbers of examples');
-    }
-
-    const numTestExamples = Math.round(numExamples * testSplit);
-    const numTrainExamples = numExamples - numTestExamples;
-
-    const xDims = data[0].length;
-
-    // Create a 2D `tf.Tensor` to hold the feature data.
-    const xs = tf.tensor2d(data, [numExamples, xDims]);
-
-    // Create a 1D `tf.Tensor` to hold the labels, and convert the number label
-    // from the set {0, 1, 2} into one-hot encoding (.e.g., 0 --> [1, 0, 0]).
-    const ys = tf.oneHot(tf.tensor1d(targets), IRIS_NUM_CLASSES);
-
-    // Split the data into training and test sets, using `slice`.
-    const xTrain = xs.slice([0, 0], [numTrainExamples, xDims]);
-    const xTest = xs.slice([numTrainExamples, 0], [numTestExamples, xDims]);
-    const yTrain = ys.slice([0, 0], [numTrainExamples, IRIS_NUM_CLASSES]);
-    const yTest = ys.slice([0, 0], [numTestExamples, IRIS_NUM_CLASSES]);
-    return [xTrain, yTrain, xTest, yTest];
-}
-
-/**
- * Obtains Iris data, split into training and test sets.
- *
- * @param testSplit Fraction of the data at the end to split as test data: a
- *   number between 0 and 1.
- *
- * @param return A length-4 `Array`, with
- *   - training data as an `Array` of length-4 `Array` of numbers.
- *   - training labels as an `Array` of numbers, with the same length as the
- *     return training data above. Each element of the `Array` is from the set
- *     {0, 1, 2}.
- *   - test data as an `Array` of length-4 `Array` of numbers.
- *   - test labels as an `Array` of numbers, with the same length as the
- *     return test data above. Each element of the `Array` is from the set
- *     {0, 1, 2}.
- */
-function getIrisData(testSplit) {
-    return tf.tidy(() => {
-        const dataByClass = [];
-        const targetsByClass = [];
-        for (let i = 0; i < IRIS_CLASSES.length; ++i) {
-            dataByClass.push([]);
-            targetsByClass.push([]);
-        }
-        for (const example of IRIS_DATA) {
-            const target = example[example.length - 1];
-            const data = example.slice(0, example.length - 1);
-            dataByClass[target].push(data);
-            targetsByClass[target].push(target);
-        }
-
-        const xTrains = [];
-        const yTrains = [];
-        const xTests = [];
-        const yTests = [];
-        for (let i = 0; i < IRIS_CLASSES.length; ++i) {
-            const [xTrain, yTrain, xTest, yTest] =
-            convertToTensors(dataByClass[i], targetsByClass[i], testSplit);
-            xTrains.push(xTrain);
-            yTrains.push(yTrain);
-            xTests.push(xTest);
-            yTests.push(yTest);
-        }
-
-        const concatAxis = 0;
-        return [
-            tf.concat(xTrains, concatAxis), tf.concat(yTrains, concatAxis),
-            tf.concat(xTests, concatAxis), tf.concat(yTests, concatAxis)
-        ];
-    });
 }
 // =============================== UI JS FUNCTIONS ==============================
 /**

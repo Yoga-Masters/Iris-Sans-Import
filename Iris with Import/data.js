@@ -1,7 +1,5 @@
-import * as tf from '@tensorflow/tfjs';
-
-export const IRIS_CLASSES = ['Iris-setosa', 'Iris-versicolor', 'Iris-virginica'];
-export const IRIS_NUM_CLASSES = IRIS_CLASSES.length;
+const IRIS_CLASSES = ['Iris-setosa', 'Iris-versicolor', 'Iris-virginica'];
+const IRIS_NUM_CLASSES = IRIS_CLASSES.length;
 
 const IRIS_DATA = [
     [5.1, 3.5, 1.4, 0.2, 0],
@@ -215,7 +213,7 @@ function convertToTensors(data, targets, testSplit) {
  *     return test data above. Each element of the `Array` is from the set
  *     {0, 1, 2}.
  */
-export function getIrisData(testSplit) {
+function getIrisData(testSplit) {
     return tf.tidy(() => {
         const dataByClass = [];
         const targetsByClass = [];

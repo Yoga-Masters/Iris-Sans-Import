@@ -1,8 +1,3 @@
-import * as tf from '@tensorflow/tfjs';
-import * as data from './data';
-import * as loader from './loader';
-import * as ui from './ui';
-
 let model;
 
 /**
@@ -19,9 +14,9 @@ let model;
  * @returns The trained `tf.Model` instance.
  */
 async function trainModel(xTrain, yTrain, xTest, yTest) {
-    ui.status('Training model... Please wait.');
+    status('Training model... Please wait.');
 
-    const params = ui.loadTrainParametersFromUI();
+    const params = loadTrainParametersFromUI();
 
     // Define the topology of the model: two dense layers.
     const model = tf.sequential();
@@ -51,8 +46,8 @@ async function trainModel(xTrain, yTrain, xTest, yTest) {
         callbacks: {
             onEpochEnd: async (epoch, logs) => {
                 // Plot the loss and accuracy values at the end of every training epoch.
-                ui.plotLosses(lossValues, epoch, logs.loss, logs.val_loss);
-                ui.plotAccuracies(accuracyValues, epoch, logs.acc, logs.val_acc);
+                plotLosses(lossValues, epoch, logs.loss, logs.val_loss);
+                plotAccuracies(accuracyValues, epoch, logs.acc, logs.val_acc);
 
                 // Await web page DOM to refresh for the most recently plotted values.
                 await tf.nextFrame();
@@ -60,7 +55,7 @@ async function trainModel(xTrain, yTrain, xTest, yTest) {
         }
     });
 
-    ui.status('Model training complete.');
+    status('Model training complete.');
     return model;
 }
 
@@ -71,7 +66,7 @@ async function trainModel(xTrain, yTrain, xTest, yTest) {
  */
 async function predictOnManualInput(model) {
     if (model == null) {
-        ui.setManualInputWinnerMessage('ERROR: Please load or train model first.');
+        setManualInputWinnerMessage('ERROR: Please load or train model first.');
         return;
     }
 
@@ -79,7 +74,7 @@ async function predictOnManualInput(model) {
     // `predict` call is released at the end.
     tf.tidy(() => {
         // Prepare input data as a 2D `tf.Tensor`.
-        const inputData = ui.getManualInputData();
+        const inputData = getManualInputData();
         const input = tf.tensor2d([inputData], [1, 4]);
 
         // Call `model.predict` to get the prediction output as probabilities for
@@ -87,9 +82,9 @@ async function predictOnManualInput(model) {
 
         const predictOut = model.predict(input);
         const logits = Array.from(predictOut.dataSync());
-        const winner = data.IRIS_CLASSES[predictOut.argMax(-1).dataSync()[0]];
-        ui.setManualInputWinnerMessage(winner);
-        ui.renderLogitsForManualInput(logits);
+        const winner = IRIS_CLASSES[predictOut.argMax(-1).dataSync()[0]];
+        setManualInputWinnerMessage(winner);
+        renderLogitsForManualInput(logits);
     });
 }
 
@@ -102,14 +97,14 @@ async function predictOnManualInput(model) {
  *   [numTestExamples, 3].
  */
 async function evaluateModelOnTestData(model, xTest, yTest) {
-    ui.clearEvaluateTable();
+    clearEvaluateTable();
 
     tf.tidy(() => {
         const xData = xTest.dataSync();
         const yTrue = yTest.argMax(-1).dataSync();
         const predictOut = model.predict(xTest);
         const yPred = predictOut.argMax(-1);
-        ui.renderEvaluateTable(
+        renderEvaluateTable(
             xData, yTrue, yPred.dataSync(), predictOut.dataSync());
     });
 
@@ -124,7 +119,7 @@ const HOSTED_MODEL_JSON_URL =
  * The main function of the Iris demo.
  */
 async function iris() {
-    const [xTrain, yTrain, xTest, yTest] = data.getIrisData(0.15);
+    const [xTrain, yTrain, xTest, yTest] = getIrisData(0.15);
 
     document.getElementById('train-from-scratch')
         .addEventListener('click', async () => {
@@ -132,32 +127,32 @@ async function iris() {
             evaluateModelOnTestData(model, xTest, yTest);
         });
 
-    if (await loader.urlExists(HOSTED_MODEL_JSON_URL)) {
-        ui.status('Model available: ' + HOSTED_MODEL_JSON_URL);
+    if (await urlExists(HOSTED_MODEL_JSON_URL)) {
+        status('Model available: ' + HOSTED_MODEL_JSON_URL);
         const button = document.getElementById('load-pretrained-remote');
         button.addEventListener('click', async () => {
-            ui.clearEvaluateTable();
-            model = await loader.loadHostedPretrainedModel(HOSTED_MODEL_JSON_URL);
+            clearEvaluateTable();
+            model = await loadHostedPretrainedModel(HOSTED_MODEL_JSON_URL);
             predictOnManualInput(model);
         });
         // button.style.visibility = 'visible';
         button.style.display = 'inline-block';
     }
 
-    if (await loader.urlExists(LOCAL_MODEL_JSON_URL)) {
-        ui.status('Model available: ' + LOCAL_MODEL_JSON_URL);
-        const button = document.getElementById('load-pretrained-local');
-        button.addEventListener('click', async () => {
-            ui.clearEvaluateTable();
-            model = await loader.loadHostedPretrainedModel(LOCAL_MODEL_JSON_URL);
-            predictOnManualInput(model);
-        });
-        // button.style.visibility = 'visible';
-        button.style.display = 'inline-block';
-    }
+    // if (await urlExists(LOCAL_MODEL_JSON_URL)) {
+    //     status('Model available: ' + LOCAL_MODEL_JSON_URL);
+    //     const button = document.getElementById('load-pretrained-local');
+    //     button.addEventListener('click', async () => {
+    //         clearEvaluateTable();
+    //         model = await loadHostedPretrainedModel(LOCAL_MODEL_JSON_URL);
+    //         predictOnManualInput(model);
+    //     });
+    //     // button.style.visibility = 'visible';
+    //     button.style.display = 'inline-block';
+    // }
 
-    ui.status('Standing by.');
-    ui.wireUpEvaluateTableCallbacks(() => predictOnManualInput(model));
+    status('Standing by.');
+    wireUpEvaluateTableCallbacks(() => predictOnManualInput(model));
 }
 
 iris();

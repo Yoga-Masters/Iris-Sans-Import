@@ -1,17 +1,32 @@
 // ===================== ^^^ DATA JS VARIABLES LOAD IN ^^^ ======================
 // ============================= GLOBAL VARIABLES ===============================
+var selectedData = document.getElementById("datatype");
+const ALL_DATA = {
+    "CLASSES": ["warriorii", "tree", "triangle"],
+    "NUM_CLASSES": 3,
+    "datatype0": DEFAULT_DATA,
+    "datatype1": MAGNITUDES_DATA,
+    "datatype2": POSITIONS_DATA,
+    "datatype3": ANGLES_DATA,
+    "datatype4": ANGLES_MAGNITUDES_DATA
+}
+IRIS_CLASSES = ALL_DATA["CLASSES"];
+IRIS_NUM_CLASSES = ALL_DATA["NUM_CLASSES"];
+IRIS_DATA = ALL_DATA[selectedData.value];
+var IRIS_DATA_LENGTH = IRIS_DATA[0].length - 1;
 let model;
 // ============================== MAIN FUNCTIONS ================================
-/**
- * The main function of the Iris demo.
- */
+// The main function of the Iris demo.
 async function iris() {
-    const [xTrain, yTrain, xTest, yTest] = getIrisData(0.15);
     document.getElementById('train-from-scratch').addEventListener('click', async () => {
+        IRIS_DATA = ALL_DATA[selectedData.value];
+        IRIS_DATA_LENGTH = IRIS_DATA[0].length - 1;
+        const [xTrain, yTrain, xTest, yTest] = getIrisData(0.01);
         model = await trainModel(xTrain, yTrain, xTest, yTest);
+        console.log(model);
         evaluateModelOnTestData(model, xTest, yTest);
     });
-    status('Standing by.');
+    status('Standing by for datatype ' + selectedData.value);
     wireUpEvaluateTableCallbacks(() => predictOnManualInput(model));
 }
 iris();
@@ -22,12 +37,12 @@ iris();
  * @param testSplit Fraction of the data at the end to split as test data: a
  *   number between 0 and 1.
  *
- * @param return A length-4 `Array`, with
- *   - training data as an `Array` of length-4 `Array` of numbers.
+ * @param return A length-IRIS_DATA_LENGTH `Array`, with
+ *   - training data as an `Array` of length-IRIS_DATA_LENGTH `Array` of numbers.
  *   - training labels as an `Array` of numbers, with the same length as the
  *     return training data above. Each element of the `Array` is from the set
  *     {0, 1, 2}.
- *   - test data as an `Array` of length-4 `Array` of numbers.
+ *   - test data as an `Array` of length-IRIS_DATA_LENGTH `Array` of numbers.
  *   - test labels as an `Array` of numbers, with the same length as the
  *     return test data above. Each element of the `Array` is from the set
  *     {0, 1, 2}.
@@ -72,17 +87,17 @@ function getIrisData(testSplit) {
  * Convert Iris data arrays to `tf.Tensor`s.
  *
  * @param data The Iris input feature data, an `Array` of `Array`s, each element
- *   of which is assumed to be a length-4 `Array` (for petal length, petal
+ *   of which is assumed to be a length-IRIS_DATA_LENGTH `Array` (for petal length, petal
  *   width, sepal length, sepal width).
  * @param targets An `Array` of numbers, with values from the set {0, 1, 2}:
  *   representing the true category of the Iris flower. Assumed to have the same
  *   array length as `data`.
  * @param testSplit Fraction of the data at the end to split as test data: a
  *   number between 0 and 1.
- * @return A length-4 `Array`, with
- *   - training data as `tf.Tensor` of shape [numTrainExapmles, 4].
+ * @return A length-IRIS_DATA_LENGTH `Array`, with
+ *   - training data as `tf.Tensor` of shape [numTrainExapmles, IRIS_DATA_LENGTH].
  *   - training one-hot labels as a `tf.Tensor` of shape [numTrainExamples, 3]
- *   - test data as `tf.Tensor` of shape [numTestExamples, 4].
+ *   - test data as `tf.Tensor` of shape [numTestExamples, IRIS_DATA_LENGTH].
  *   - test one-hot labels as a `tf.Tensor` of shape [numTestExamples, 3]
  */
 function convertToTensors(data, targets, testSplit) {
@@ -115,19 +130,19 @@ function convertToTensors(data, targets, testSplit) {
  * Train a `tf.Model` to recognize Iris flower type.
  *
  * @param xTrain Training feature data, a `tf.Tensor` of shape
- *   [numTrainExamples, 4]. The second dimension include the features
+ *   [numTrainExamples, IRIS_DATA_LENGTH]. The second dimension include the features
  *   petal length, petalwidth, sepal length and sepal width.
  * @param yTrain One-hot training labels, a `tf.Tensor` of shape
  *   [numTrainExamples, 3].
- * @param xTest Test feature data, a `tf.Tensor` of shape [numTestExamples, 4].
+ * @param xTest Test feature data, a `tf.Tensor` of shape [numTestExamples, IRIS_DATA_LENGTH].
  * @param yTest One-hot test labels, a `tf.Tensor` of shape
  *   [numTestExamples, 3].
  * @returns The trained `tf.Model` instance.
  */
 async function trainModel(xTrain, yTrain, xTest, yTest) {
-    status('Training model... Please wait.');
+    var time = Date.now();
+    status("Training model @ " + (new Date(time)).toLocaleTimeString() + "... Please wait.");
     const params = loadTrainParametersFromUI();
-    // Define the topology of the model: two dense layers.
     const model = tf.sequential();
     model.add(tf.layers.dense({
         units: 10,
@@ -155,13 +170,12 @@ async function trainModel(xTrain, yTrain, xTest, yTest) {
                 // Plot the loss and accuracy values at the end of every training epoch.
                 plotLosses(lossValues, epoch, logs.loss, logs.val_loss);
                 plotAccuracies(accuracyValues, epoch, logs.acc, logs.val_acc);
-
                 // Await web page DOM to refresh for the most recently plotted values.
                 await tf.nextFrame();
             },
         }
     });
-    status('Model training complete.');
+    status("Model training complete @ " + (new Date(Date.now())).toLocaleTimeString() + ", in " + (Date.now() - time) + " ms; AKA: " + convertMS(Date.now() - time).m + " mins " + convertMS(Date.now() - time).s + " seconds.");
     return model;
 }
 
@@ -171,21 +185,13 @@ async function trainModel(xTrain, yTrain, xTest, yTest) {
  * @param model The instance of `tf.Model` to run the inference with.
  */
 async function predictOnManualInput(model) {
-    if (model == null) {
-        setManualInputWinnerMessage('ERROR: Please load or train model first.');
-        return;
-    }
-
-    // Use a `tf.tidy` scope to make sure that WebGL memory allocated for the
-    // `predict` call is released at the end.
-    tf.tidy(() => {
+    if (model == null) setManualInputWinnerMessage('ERROR: Please load or train model first.');
+    else tf.tidy(() => { // Use a `tf.tidy` scope to make sure that WebGL memory allocated for the `predict` call is released at the end.
         // Prepare input data as a 2D `tf.Tensor`.
         const inputData = getManualInputData();
-        const input = tf.tensor2d([inputData], [1, 4]);
-
+        const input = tf.tensor2d([inputData], [1, IRIS_DATA_LENGTH]);
         // Call `model.predict` to get the prediction output as probabilities for
         // the Iris flower categories.
-
         const predictOut = model.predict(input);
         const logits = Array.from(predictOut.dataSync());
         const winner = IRIS_CLASSES[predictOut.argMax(-1).dataSync()[0]];
@@ -198,13 +204,12 @@ async function predictOnManualInput(model) {
  * Run inference on some test Iris flower data.
  *
  * @param model The instance of `tf.Model` to run the inference with.
- * @param xTest Test data feature, a `tf.Tensor` of shape [numTestExamples, 4].
+ * @param xTest Test data feature, a `tf.Tensor` of shape [numTestExamples, IRIS_DATA_LENGTH].
  * @param yTest Test true labels, one-hot encoded, a `tf.Tensor` of shape
  *   [numTestExamples, 3].
  */
 async function evaluateModelOnTestData(model, xTest, yTest) {
     clearEvaluateTable();
-
     tf.tidy(() => {
         const xData = xTest.dataSync();
         const yTrue = yTest.argMax(-1).dataSync();
@@ -213,7 +218,6 @@ async function evaluateModelOnTestData(model, xTest, yTest) {
         renderEvaluateTable(
             xData, yTrue, yPred.dataSync(), predictOut.dataSync());
     });
-
     predictOnManualInput(model);
 }
 // =============================== UI JS FUNCTIONS ==============================
@@ -318,12 +322,9 @@ function plotAccuracies(
  * Get manually input Iris data from the input boxes.
  */
 function getManualInputData() {
-    return [
-        Number(document.getElementById('petal-length').value),
-        Number(document.getElementById('petal-width').value),
-        Number(document.getElementById('sepal-length').value),
-        Number(document.getElementById('sepal-width').value),
-    ];
+    var manualInput = [];
+    for (i = 1; i <= IRIS_DATA_LENGTH; i++) manualInput.push(Number(document.getElementById('data' + i).value));
+    return manualInput;
 }
 
 function setManualInputWinnerMessage(message) {
@@ -369,12 +370,11 @@ function renderLogitsForManualInput(logits) {
 
 function renderEvaluateTable(xData, yTrue, yPred, logits) {
     const tableBody = document.getElementById('evaluate-tbody');
-
     for (let i = 0; i < yTrue.length; ++i) {
         const row = document.createElement('tr');
-        for (let j = 0; j < 4; ++j) {
+        for (let j = 0; j < IRIS_DATA_LENGTH; ++j) {
             const cell = document.createElement('td');
-            cell.textContent = xData[4 * i + j].toFixed(1);
+            cell.textContent = xData[IRIS_DATA_LENGTH * i + j].toFixed(1);
             row.appendChild(cell);
         }
         const truthCell = document.createElement('td');
@@ -397,55 +397,9 @@ function renderEvaluateTable(xData, yTrue, yPred, logits) {
 }
 
 function wireUpEvaluateTableCallbacks(predictOnManualInputCallback) {
-    const petalLength = document.getElementById('petal-length');
-    const petalWidth = document.getElementById('petal-width');
-    const sepalLength = document.getElementById('sepal-length');
-    const sepalWidth = document.getElementById('sepal-width');
-
-    const increment = 0.1;
-    document.getElementById('petal-length-inc').addEventListener('click', () => {
-        petalLength.value = (Number(petalLength.value) + increment).toFixed(1);
-        predictOnManualInputCallback();
-    });
-    document.getElementById('petal-length-dec').addEventListener('click', () => {
-        petalLength.value = (Number(petalLength.value) - increment).toFixed(1);
-        predictOnManualInputCallback();
-    });
-    document.getElementById('petal-width-inc').addEventListener('click', () => {
-        petalWidth.value = (Number(petalWidth.value) + increment).toFixed(1);
-        predictOnManualInputCallback();
-    });
-    document.getElementById('petal-width-dec').addEventListener('click', () => {
-        petalWidth.value = (Number(petalWidth.value) - increment).toFixed(1);
-        predictOnManualInputCallback();
-    });
-    document.getElementById('sepal-length-inc').addEventListener('click', () => {
-        sepalLength.value = (Number(sepalLength.value) + increment).toFixed(1);
-        predictOnManualInputCallback();
-    });
-    document.getElementById('sepal-length-dec').addEventListener('click', () => {
-        sepalLength.value = (Number(sepalLength.value) - increment).toFixed(1);
-        predictOnManualInputCallback();
-    });
-    document.getElementById('sepal-width-inc').addEventListener('click', () => {
-        sepalWidth.value = (Number(sepalWidth.value) + increment).toFixed(1);
-        predictOnManualInputCallback();
-    });
-    document.getElementById('sepal-width-dec').addEventListener('click', () => {
-        sepalWidth.value = (Number(sepalWidth.value) - increment).toFixed(1);
-        predictOnManualInputCallback();
-    });
-
-    document.getElementById('petal-length').addEventListener('change', () => {
-        predictOnManualInputCallback();
-    });
-    document.getElementById('petal-width').addEventListener('change', () => {
-        predictOnManualInputCallback();
-    });
-    document.getElementById('sepal-length').addEventListener('change', () => {
-        predictOnManualInputCallback();
-    });
-    document.getElementById('sepal-width').addEventListener('change', () => {
+    for (i = 1; i <= IRIS_DATA_LENGTH; i++) document.getElementById('data' + i).addEventListener('change', () => {
+        status('Standing by for datatype ' + selectedData.value);
+        wireUpEvaluateTableCallbacks(() => predictOnManualInput(model));
         predictOnManualInputCallback();
     });
 }
@@ -501,4 +455,21 @@ async function loadHostedPretrainedModel(url) {
         console.error(err);
         status('Loading pretrained model failed.');
     }
+}
+
+function convertMS(ms) {
+    var d, h, m, s;
+    s = Math.floor(ms / 1000);
+    m = Math.floor(s / 60);
+    s = s % 60;
+    h = Math.floor(m / 60);
+    m = m % 60;
+    d = Math.floor(h / 24);
+    h = h % 24;
+    return {
+        d: d,
+        h: h,
+        m: m,
+        s: s
+    };
 }

@@ -1,37 +1,18 @@
-// Setup data into the right variables; change this to parameters in train model functions
-const trainingData = [ANGLES_MAGNITUDES_CLASSES, ANGLES_MAGNITUDES_DATA]; // Training data in one big data array
-// trainingConsts: Test split, 0 for maximum training; learning rate & epochs
-const slowTrainingConfig = [0.01, 0.001, 2000]; // Slow but almost guarenteed optimal learning with low loss
-const fastTrainingConfig = [0.01, 0.03, 125]; // Rapid quickfire learning with high chance of high loss
-//Calling the train model function and logging the result
-let model;
-var time = Date.now();
-getTrainedModel(trainingData, fastTrainingConfig).then(mdl => {
-    model = mdl;
-    console.log("MAIN RUNNER MODEL:", model);
-    tryIt(time);
-});
-
-function tryIt(time) {
-    getConfidences([90, -88, 98, -94, 103, -106, 17, -9, 65, -44, 6, -48, 0.2259, 0.2331, 0.3615, 0.3552, 0.5069, 0.5085, 0.1388, 0.1302, 0.383, 0.3689, 0.5681, 0.5769]).then(confs => {
-        console.log("AFTER " + (Date.now() - time) + "MS, MAIN RUNNER OUTPUT: " + JSON.stringify(confs));
-    });
-}
 //Two functions to use for the app below; one to train, one to predict
 function getTrainedModel(tData, config) { // Returns a trained model
-    return new Promise(function (resolve) {
+    return new Promise(async function (resolve) {
         const classes = tData[0];
         const numClasses = tData[0].length;
         const data = tData[1];
         const [xTrain, yTrain, xTest, yTest] = getPreppedTrainingData(config[0], data, classes, numClasses);
-        trainModel(xTrain, yTrain, xTest, yTest, {
+        await trainModel(xTrain, yTrain, xTest, yTest, {
             "epochs": config[2],
             "learningRate": config[1]
         }, (model, accuracy, taccuracy, loss, tloss) => {
             if (accuracy == 1 && taccuracy == 1 && loss < .1 && tloss < .1)
                 resolve(model);
             else {
-                console.log("Model not good enough, training again: ", accuracy, taccuracy, loss, tloss);
+                console.log("Model not good enough, training again: ", "accuracy: " + accuracy, "taccuracy: " + taccuracy, "loss: " + loss, "tloss: " + tloss);
                 getTrainedModel(tData, config).then(mdl => {
                     resolve(mdl);
                 });
@@ -39,10 +20,11 @@ function getTrainedModel(tData, config) { // Returns a trained model
         });
     });
 }
-
+// Returns confidences using global model
 function getConfidences(data) {
+    console.log(data);
     return new Promise(function (resolve) {
-        predictOnManualInput(model, data, trainingData[0], trainingData[1][0].length - 1, logits => {
+        predictOnManualInput(model, data, data.length, logits => {
             resolve(logits);
         });
     });
@@ -84,7 +66,7 @@ function getPreppedTrainingData(testSplit, data, classes, numClasses) {
     });
 }
 
-function trainModel(xTrain, yTrain, xTest, yTest, params, cb) {
+async function trainModel(xTrain, yTrain, xTest, yTest, params, cb) {
     var time = Date.now();
     console.log("Training model @ " + (new Date(time)).toLocaleTimeString() + " on angles_magnitudes data. Training using a " + params.learningRate + " learning rate for " + params.epochs + " epochs; please wait...");
     const model = tf.sequential();
@@ -103,21 +85,25 @@ function trainModel(xTrain, yTrain, xTest, yTest, params, cb) {
         loss: 'categoricalCrossentropy',
         metrics: ['accuracy'],
     });
-    model.fit(xTrain, yTrain, {
+    await model.fit(xTrain, yTrain, {
         epochs: params.epochs,
-        validationData: [xTest, yTest]
+        validationData: [xTest, yTest],
+        callbacks: {
+            onEpochEnd: async (epoch, logs) => {
+                await tf.nextFrame();
+            }
+        }
     }).then((value) => {
         console.log("Model training complete @ " + (new Date(Date.now())).toLocaleTimeString() + ", in " + (Date.now() - time) + " ms; AKA: " + convertMS(Date.now() - time).m + " mins " + convertMS(Date.now() - time).s + " seconds.");
         cb(model, value.history.acc.pop(), value.history.val_acc.pop(), value.history.loss.pop(), value.history.val_loss.pop());
     });
 }
 
-function predictOnManualInput(model, inputData, classes, length, cb) {
+function predictOnManualInput(model, inputData, length, cb) {
     tf.tidy(() => {
         const input = tf.tensor2d([inputData], [1, length]);
         const predictOut = model.predict(input);
-        const logits = Array.from(predictOut.dataSync()).map(x => Number.parseFloat(x).toFixed(3));
-        logits.push(classes[predictOut.argMax(-1).dataSync()[0]]);
+        var logits = Array.from(predictOut.dataSync()).map(x => Number.parseFloat(Number.parseFloat(x).toFixed(3)));
         cb(logits);
     });
 }

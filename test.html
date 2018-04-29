@@ -4,109 +4,120 @@
 
 <head>
     <title>Tensorflow Yoga Master Test Cases</title>
-    <!-- <style>
-        input {
-            width: 55px;
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link type="text/css" rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700">
+    <link type="text/css" rel="stylesheet" href="normalize.css">
+    <style>
+        html {
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+            font-family: 'Roboto', sans-serif;
         }
-    </style> -->
+
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 20px;
+            background-color: rgba(0, 0, 0, .9);
+            color: #00ff00;
+            overflow: hidden;
+        }
+    </style>
 </head>
 
 <body>
-    <!-- <input id="train-epochs" type="number" value="100">
-    <input id="learning-rate" type="number" value="0.03"> -->
-    <span id="demo-status">Standing by.</span>
-    <!-- <div id="evaluate">
-        <div id="evaluate-table-title">Text Examples</div>
-        <table id="evaluate-table">
-            <tr>
-                <th>data1</th>
-                <th>data2</th>
-                <th>data3</th>
-                <th>data4</th>
-                <th>data5</th>
-                <th>data6</th>
-                <th>data7</th>
-                <th>data8</th>
-                <th>data9</th>
-                <th>data10</th>
-                <th>data11</th>
-                <th>data12</th>
-                <th>data13</th>
-                <th>data14</th>
-                <th>data15</th>
-                <th>data16</th>
-                <th>data17</th>
-                <th>data18</th>
-                <th>data19</th>
-                <th>data20</th>
-                <th>data21</th>
-                <th>data22</th>
-                <th>data23</th>
-                <th>data24</th>
-                <th>True class</th>
-                <th>Predicted class</th>
-                <th>Probabilities</th>
-            </tr>
-            <tbody id="evaluate-tbody">
-                <tr>
-                    <td>
-                        <input id="data1" value="90"> </td>
-                    <td>
-                        <input id="data2" value="-88"> </td>
-                    <td>
-                        <input id="data3" value="98"> </td>
-                    <td>
-                        <input id="data4" value="-94"> </td>
-                    <td>
-                        <input id="data5" value="103"> </td>
-                    <td>
-                        <input id="data6" value="-106"> </td>
-                    <td>
-                        <input id="data7" value="17"> </td>
-                    <td>
-                        <input id="data8" value="-9"> </td>
-                    <td>
-                        <input id="data9" value="65"> </td>
-                    <td>
-                        <input id="data10" value="-44"> </td>
-                    <td>
-                        <input id="data11" value="6"> </td>
-                    <td>
-                        <input id="data12" value="-48"> </td>
-                    <td>
-                        <input id="data13" value="0.2259"> </td>
-                    <td>
-                        <input id="data14" value="0.2331"> </td>
-                    <td>
-                        <input id="data15" value="0.3615"> </td>
-                    <td>
-                        <input id="data16" value="0.3552"> </td>
-                    <td>
-                        <input id="data17" value="0.5069"> </td>
-                    <td>
-                        <input id="data18" value="0.5085"> </td>
-                    <td>
-                        <input id="data19" value="0.1388"> </td>
-                    <td>
-                        <input id="data20" value="0.1302"> </td>
-                    <td>
-                        <input id="data21" value="0.383"> </td>
-                    <td>
-                        <input id="data22" value="0.3689"> </td>
-                    <td>
-                        <input id="data23" value="0.5681"> </td>
-                    <td>
-                        <input id="data24" value="0.5769"> </td>
-                    <td></td>
-                    <td id="winner"></td>
-                    <td id="logits"></td>
-                </tr>
-            </tbody>
-        </table>
-    </div> -->
+    <span id="demo-status">Loading...
+        <br>
+        <br> </span>
+    <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
+    <script>
+        var logger = function () {
+            var oldConsoleLog = null;
+            var pub = {};
+            pub.enableLogger = function enableLogger() {
+                if (oldConsoleLog == null) return;
+                window['console']['log'] = oldConsoleLog;
+            };
+            pub.disableLogger = function disableLogger() {
+                oldConsoleLog = console.log;
+                window['console']['log'] = function () {};
+            };
+            pub.enhanceLogger = function enhanceLogger() {
+                oldConsoleLog = console.log;
+                window['console']['log'] = function () {
+                    for (var i = 0; i < arguments.length; i++) {
+                        oldConsoleLog(arguments[i]);
+                        document.getElementById('demo-status').innerHTML += arguments[i] + "<br>";
+                    }
+                    document.getElementById('demo-status').innerHTML += "<br>";
+                };
+            };
+            return pub;
+        }();
+        logger.enhanceLogger();
+        firebase.initializeApp({
+            apiKey: "AIzaSyBfzO0wkhLUX0sSKeQi1d7uMvvJrf7Ti4s",
+            authDomain: "yoga-master-training-db.firebaseapp.com",
+            databaseURL: "https://yoga-master-training-db.firebaseio.com",
+            projectId: "yoga-master-training-db",
+            storageBucket: "yoga-master-training-db.appspot.com",
+            messagingSenderId: "743195328789"
+        });
+        var db = firebase.database();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.9.0"></script>
-    <script src="data.js"></script>
     <script src="tfmodel.js"></script>
+    <script>
+        var poseIndex = {
+            "warriorii": 0,
+            "tree": 1,
+            "triangle": 2,
+            // "none": 3
+        };
+        var selectedType = "datatype4";
+        // trainingConsts: Test split, 0 for maximum training; learning rate & epochs
+        const slowTrainingConfig = [0.01, 0.001, 2000]; // Slow but almost guarenteed optimal learning with low loss
+        const fastTrainingConfig = [0.01, 0.03, 125]; // Rapid quickfire learning with chance of high loss
+        var time = Date.now();
+        let model;
+        //Calling the train model function and logging the results
+        getTrainingData(tdbdata => {
+            console.log("AFTER " + (Date.now() - time) + "MS, MAIN DOWNLOAD_DATA: ", tdbdata);
+            getTrainedModel(tdbdata, fastTrainingConfig).then(mdl => {
+                model = mdl;
+                console.log("AFTER " + (Date.now() - time) + "MS, MAIN MODEL:", model);
+                getConfidences([90, -88, 98, -94, 103, -106, 17, -9, 65, -44, 6, -48, 0.2259, 0.2331,
+                    0.3615, 0.3552, 0.5069, 0.5085, 0.1388, 0.1302, 0.383, 0.3689, 0.5681,
+                    0.5769
+                ]).then(confs => {
+                    confs.push(Object.keys(poseIndex)[confs.indexOf(Math.max.apply({}, confs))]);
+                    console.log("AFTER " + (Date.now() - time) + "MS, MAIN RUNNER: ", confs);
+                });
+            });
+        });
+
+        function getTrainingData(cb) { // Takes care of chance of high loss by
+            db.ref("frames").once("value", snap => {
+                var types = {
+                    "datatype4": "ANGLES_MAGNITUDES"
+                };
+                var data = snap.val();
+                var trainingData = {};
+                for (const type in types) trainingData[type] = [];
+                for (const key of Object.keys(data))
+                    for (const type in types)
+                        if (data[key][type] && !(data[key][type] == 0 || data[key][type] == 1)) {
+                            data[key][type].push(poseIndex[data[key].pose]);
+                            trainingData[type].push(data[key][type]);
+                        }
+                // trainingData["datatype4"].push([90, -88, 98, -94, 103, -106, 17, -9, 65, -44, 6, -48, 0.2259, 0.2331, 0.3615, 0.3552, 0.5069, 0.5085, 0.1388, 0.1302, 0.383, 0.3689, 0.5681, 0.5769, 3]);
+                for (const type in types) trainingData[type + "_CLASSES"] = Object.keys(poseIndex);
+                cb([trainingData[selectedType + "_CLASSES"], trainingData[selectedType]]);
+            });
+        }
+    </script>
 </body>
 
 </html>

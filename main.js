@@ -143,7 +143,9 @@ async function trainModel(xTrain, yTrain, xTest, yTest) {
     var time = Date.now();
     status("Training model @ " + (new Date(time)).toLocaleTimeString() + "... Please wait.");
     const params = loadTrainParametersFromUI();
+    console.log("params", params);
     const model = tf.sequential();
+    console.log("model", model);
     model.add(tf.layers.dense({
         units: 10,
         activation: 'sigmoid',
@@ -165,15 +167,17 @@ async function trainModel(xTrain, yTrain, xTest, yTest) {
     const history = await model.fit(xTrain, yTrain, {
         epochs: params.epochs,
         validationData: [xTest, yTest],
-        callbacks: {
-            onEpochEnd: async (epoch, logs) => {
-                // Plot the loss and accuracy values at the end of every training epoch.
-                plotLosses(lossValues, epoch, logs.loss, logs.val_loss);
-                plotAccuracies(accuracyValues, epoch, logs.acc, logs.val_acc);
-                // Await web page DOM to refresh for the most recently plotted values.
-                await tf.nextFrame();
-            },
-        }
+        // callbacks: {
+        //     onEpochEnd: async (epoch, logs) => {
+        //         // Plot the loss and accuracy values at the end of every training epoch.
+        //         if (showGraphs.checked) {
+        //             plotLosses(lossValues, epoch, logs.loss, logs.val_loss);
+        //             plotAccuracies(accuracyValues, epoch, logs.acc, logs.val_acc);
+        //         }
+        //         // Await web page DOM to refresh for the most recently plotted values.
+        //         await tf.nextFrame();
+        //     },
+        // }
     });
     status("Model training complete @ " + (new Date(Date.now())).toLocaleTimeString() + ", in " + (Date.now() - time) + " ms; AKA: " + convertMS(Date.now() - time).m + " mins " + convertMS(Date.now() - time).s + " seconds.");
     return model;
@@ -189,6 +193,7 @@ async function predictOnManualInput(model) {
     else tf.tidy(() => { // Use a `tf.tidy` scope to make sure that WebGL memory allocated for the `predict` call is released at the end.
         // Prepare input data as a 2D `tf.Tensor`.
         const inputData = getManualInputData();
+        console.log(inputData);
         const input = tf.tensor2d([inputData], [1, IRIS_DATA_LENGTH]);
         // Call `model.predict` to get the prediction output as probabilities for
         // the Iris flower categories.
@@ -364,6 +369,7 @@ function renderLogits(logits, parentElement) {
 }
 
 function renderLogitsForManualInput(logits) {
+    console.log(logits);
     const logitsElement = document.getElementById('logits');
     renderLogits(logits, logitsElement);
 }

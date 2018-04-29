@@ -57,7 +57,7 @@
             font-weight: bold;
             font-family: monospace;
             font-size: 110%;
-            margin-top: 1em;
+            /* margin-top: 1em; */
         }
 
         #evaluate-table {
@@ -94,19 +94,33 @@
         .wrong-prediction {
             background-color: red;
         }
+
+        .iblock {
+            display: inline-block;
+        }
+
+        h1.iblock {
+            margin: 0px 20px;
+            position: relative;
+            top: -35px;
+        }
+
+        #showGraphs {
+            width: fit-content;
+        }
     </style>
 
     <body>
         <div>
             <div class="horizontal-section">
-                <h1>Yoga Masters</h1>
-                <div class="create-model">
+                <h1 class="iblock">Yoga Masters Tensorflow Training</h1>
+                <div class="create-model iblock">
                     <div class="input-div">
                         <span class="input-label">Train Epochs:</span>
-                        <input id="train-epochs" type="number" value="1500"> </div>
+                        <input id="train-epochs" type="number" value="100"> </div>
                     <div class="input-div">
                         <span class="input-label">Learning Rate:</span>
-                        <input id="learning-rate" type="number" value="0.001"> </div>
+                        <input id="learning-rate" type="number" value="0.03"> </div>
                     <button id="train-from-scratch">Train model from scratch</button>
                     <select name="datatype" id="datatype">
                         <option value="datatype0">Iris Data</option>
@@ -115,11 +129,15 @@
                         <option value="datatype3">Angles</option>
                         <option selected value="datatype4">Angles+Magnitudes</option>
                     </select>
+                    <div class="input-div">
+                        <input type="checkbox" id="showGraphs" onchange="toggleGraph()">
+                        <label for="showGraphs">Show Vega Graphs?</label>
+                    </div>
                 </div>
-                <div>
+                <div class="iblock">
                     <span id="demo-status">Standing by.</span>
                 </div>
-                <div id="horizontal-section">
+                <div id="horizontal-section" style="display: none;">
                     <div class="canvases" id="lossCanvas"></div>
                     <div class="canvases" id="accuracyCanvas"></div>
                 </div>
@@ -151,10 +169,10 @@
                             <th>data22</th>
                             <th>data23</th>
                             <th>data24</th>
-                            <th>data25</th>
+                            <!-- <th>data25</th>
                             <th>data26</th>
                             <th>data27</th>
-                            <th>data28</th>
+                            <th>data28</th> -->
                             <th>True class</th>
                             <th>Predicted class</th>
                             <th>Probabilities</th>
@@ -209,14 +227,14 @@
                                     <input id="data23" value="0.5681"> </td>
                                 <td>
                                     <input id="data24" value="0.5769"> </td>
-                                <td>
+                                <!-- <td>
                                     <input id="data25" value="0.5769"> </td>
                                 <td>
                                     <input id="data26" value="0.5769"> </td>
                                 <td>
                                     <input id="data27" value="0.5769"> </td>
                                 <td>
-                                    <input id="data28" value="0.5769"> </td>
+                                    <input id="data28" value="0.5769"> </td> -->
                                 <td></td>
                                 <td id="winner"></td>
                                 <td id="logits"></td>
@@ -230,6 +248,14 @@
         <script src="https://cdn.jsdelivr.net/npm/vega@3.3.0/build/vega.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vega-lite@2.3.1/build/vega-lite.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vega-embed@3.5.0/build/vega-embed.min.js"></script>
+        <script>
+            var showGraphs = document.getElementById("showGraphs");
+
+            function toggleGraph() {
+                if (showGraphs.checked) document.getElementById("horizontal-section").style.display = "block";
+                else document.getElementById("horizontal-section").style.display = "none";
+            }
+        </script>
         <script src="data.js"></script>
         <script src="main.js"></script>
     </body>

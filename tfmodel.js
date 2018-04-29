@@ -2,24 +2,23 @@
 const trainingData = [ANGLES_MAGNITUDES_CLASSES, ANGLES_MAGNITUDES_DATA]; // Training data in one big data array
 // trainingConsts: Test split, 0 for maximum training; learning rate & epochs
 const slowTrainingConfig = [0.01, 0.001, 2000]; // Slow but almost guarenteed optimal learning with low loss
-const fastTrainingConfig = [0.01, 0.03, 100]; // Rapid quickfire learning with high chance of high loss
+const fastTrainingConfig = [0.01, 0.03, 125]; // Rapid quickfire learning with high chance of high loss
 //Calling the train model function and logging the result
 let model;
+var time = Date.now();
 getTrainedModel(trainingData, fastTrainingConfig).then(mdl => {
     model = mdl;
     console.log("MAIN RUNNER MODEL:", model);
-    tryIt();
+    tryIt(time);
 });
 
-function tryIt() {
-    var time = Date.now();
+function tryIt(time) {
     getConfidences([90, -88, 98, -94, 103, -106, 17, -9, 65, -44, 6, -48, 0.2259, 0.2331, 0.3615, 0.3552, 0.5069, 0.5085, 0.1388, 0.1302, 0.383, 0.3689, 0.5681, 0.5769]).then(confs => {
-        console.log("AFTER " + (Date.now() - time) + "MS, MAIN RUNNER OUTPUT:", confs);
+        console.log("AFTER " + (Date.now() - time) + "MS, MAIN RUNNER OUTPUT: " + JSON.stringify(confs));
     });
 }
-
 //Two functions to use for the app below; one to train, one to predict
-function getTrainedModel(tData, config, cb) { // Returns a trained model
+function getTrainedModel(tData, config) { // Returns a trained model
     return new Promise(function (resolve) {
         const classes = tData[0];
         const numClasses = tData[0].length;
@@ -28,8 +27,15 @@ function getTrainedModel(tData, config, cb) { // Returns a trained model
         trainModel(xTrain, yTrain, xTest, yTest, {
             "epochs": config[2],
             "learningRate": config[1]
-        }, (model) => {
-            resolve(model);
+        }, (model, accuracy, taccuracy, loss, tloss) => {
+            if (accuracy == 1 && taccuracy == 1 && loss < .1 && tloss < .1)
+                resolve(model);
+            else {
+                console.log("Model not good enough, training again: ", accuracy, taccuracy, loss, tloss);
+                getTrainedModel(tData, config).then(mdl => {
+                    resolve(mdl);
+                });
+            }
         });
     });
 }
@@ -43,7 +49,7 @@ function getConfidences(data) {
 }
 //All functions below used as tensorflow library
 function getPreppedTrainingData(testSplit, data, classes, numClasses) {
-    status("Prepping data for training with labels = " + JSON.stringify(classes) + ", length = " + numClasses + " with a " + testSplit * 100 + "% test-to-data split.");
+    console.log("Prepping data for training with labels = " + JSON.stringify(classes) + ", length = " + numClasses + " with a " + testSplit * 100 + "% test-to-data split.");
     return tf.tidy(() => {
         const dataByClass = [];
         const targetsByClass = [];
@@ -80,7 +86,7 @@ function getPreppedTrainingData(testSplit, data, classes, numClasses) {
 
 function trainModel(xTrain, yTrain, xTest, yTest, params, cb) {
     var time = Date.now();
-    status("Training model @ " + (new Date(time)).toLocaleTimeString() + " on angles_magnitudes data. Training using a " + params.learningRate + " learning rate for " + params.epochs + " epochs; please wait...");
+    console.log("Training model @ " + (new Date(time)).toLocaleTimeString() + " on angles_magnitudes data. Training using a " + params.learningRate + " learning rate for " + params.epochs + " epochs; please wait...");
     const model = tf.sequential();
     model.add(tf.layers.dense({
         units: 10,
@@ -97,14 +103,12 @@ function trainModel(xTrain, yTrain, xTest, yTest, params, cb) {
         loss: 'categoricalCrossentropy',
         metrics: ['accuracy'],
     });
-    const lossValues = [];
-    const accuracyValues = [];
-    const history = model.fit(xTrain, yTrain, {
+    model.fit(xTrain, yTrain, {
         epochs: params.epochs,
         validationData: [xTest, yTest]
-    }).then(() => {
-        status("Model training complete @ " + (new Date(Date.now())).toLocaleTimeString() + ", in " + (Date.now() - time) + " ms; AKA: " + convertMS(Date.now() - time).m + " mins " + convertMS(Date.now() - time).s + " seconds.");
-        cb(model);
+    }).then((value) => {
+        console.log("Model training complete @ " + (new Date(Date.now())).toLocaleTimeString() + ", in " + (Date.now() - time) + " ms; AKA: " + convertMS(Date.now() - time).m + " mins " + convertMS(Date.now() - time).s + " seconds.");
+        cb(model, value.history.acc.pop(), value.history.val_acc.pop(), value.history.loss.pop(), value.history.val_loss.pop());
     });
 }
 
@@ -131,11 +135,6 @@ function convertToTensors(data, targets, testSplit, numClasses) {
     const yTrain = ys.slice([0, 0], [numTrainExamples, numClasses]);
     const yTest = ys.slice([0, 0], [numTestExamples, numClasses]);
     return [xTrain, yTrain, xTest, yTest];
-}
-
-function status(statusText) {
-    console.log(statusText);
-    document.getElementById('demo-status').textContent = statusText;
 }
 
 function convertMS(ms) {

@@ -1,5 +1,5 @@
 //Two functions to use for the app below; one to train, one to predict
-function getTrainedModel(tData, config) { // Returns a trained model
+function getTrainedModel(tData, config) { // Returns a trained model, takes care of chance of high loss by recursion
     return new Promise(async function (resolve) {
         const classes = tData[0];
         const numClasses = tData[0].length;
@@ -21,8 +21,7 @@ function getTrainedModel(tData, config) { // Returns a trained model
     });
 }
 // Returns confidences using global model
-function getConfidences(data) {
-    console.log(data);
+function getConfidences(model, data) {
     return new Promise(function (resolve) {
         predictOnManualInput(model, data, data.length, logits => {
             resolve(logits);

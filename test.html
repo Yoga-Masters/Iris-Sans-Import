@@ -30,8 +30,7 @@
 <body>
     <span id="demo-status">Open console for better logs; Loading...
         <br>
-        <br>
-    </span>
+        <br> </span>
     <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.9.0"></script>
     <script src="tfmodel.js"></script>
@@ -94,7 +93,13 @@
                 console.log("AFTER " + (Date.now() - time) + "MS, MAIN MODEL:", model);
                 getConfidences(model, tdbdata[1][0].slice(0, -1)).then(confs => { // Making a prediction using the model and first row of tdata
                     confs.push(Object.keys(poseIndex)[confs.indexOf(Math.max.apply({}, confs))]);
-                    console.log("AFTER " + (Date.now() - time) + "MS, MAIN RUNNER: ", confs);
+                    console.log("AFTER " + (Date.now() - time) + "MS, MAIN RUNNER: ", confs,
+                        tdbdata[1][0]);
+                });
+                getConfidences(model, tdbdata[1][tdbdata[1].length - 1].slice(0, -1)).then(confs => { //Another prediction w/ last row of tdata
+                    confs.push(Object.keys(poseIndex)[confs.indexOf(Math.max.apply({}, confs))]);
+                    console.log("AFTER " + (Date.now() - time) + "MS, MAIN RUNNER: ", confs,
+                        tdbdata[1][tdbdata[1].length - 1]);
                 });
             });
         });

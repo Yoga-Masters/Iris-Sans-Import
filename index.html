@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 
 <head>
@@ -5,9 +6,6 @@
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <title>Iris Sans Import Test</title>
-</head>
-
-<body>
     <style>
         button {
             font-size: 105%;
@@ -109,125 +107,126 @@
             width: fit-content;
         }
     </style>
+</head>
 
-    <body>
-        <div>
-            <div class="horizontal-section">
-                <h1 class="iblock">Yoga Masters Tensorflow Training</h1>
-                <div class="create-model iblock">
-                    <div class="input-div">
-                        <span class="input-label">Train Epochs:</span>
-                        <input id="train-epochs" type="number" value="100"> </div>
-                    <div class="input-div">
-                        <span class="input-label">Learning Rate:</span>
-                        <input id="learning-rate" type="number" value="0.03"> </div>
-                    <button id="train-from-scratch">Train model from scratch</button>
-                    <select name="datatype" id="datatype">
-                        <option value="datatype0">Iris Data</option>
-                        <option value="datatype1">Magnitudes</option>
-                        <option value="datatype2">Positions</option>
-                        <option value="datatype3">Angles</option>
-                        <option selected value="datatype4">Angles+Magnitudes</option>
-                    </select>
-                    <div class="input-div">
-                        <input type="checkbox" id="showGraphs" onchange="toggleGraph()">
-                        <label for="showGraphs">Show Vega Graphs?</label>
-                    </div>
+<body>
+    <div>
+        <div class="horizontal-section">
+            <h1 class="iblock">Yoga Masters Tensorflow Training</h1>
+            <div class="create-model iblock">
+                <div class="input-div">
+                    <span class="input-label">Train Epochs:</span>
+                    <input id="train-epochs" type="number" value="100"> </div>
+                <div class="input-div">
+                    <span class="input-label">Learning Rate:</span>
+                    <input id="learning-rate" type="number" value="0.03"> </div>
+                <button id="train-from-scratch">Train model from scratch</button>
+                <select name="datatype" id="datatype">
+                    <option value="datatype0">Iris Data</option>
+                    <option value="datatype1">Magnitudes</option>
+                    <option value="datatype2">Positions</option>
+                    <option value="datatype3">Angles</option>
+                    <option selected value="datatype4">Angles+Magnitudes</option>
+                </select>
+                <div class="input-div">
+                    <input type="checkbox" id="showGraphs" onchange="toggleGraph()">
+                    <label for="showGraphs">Show Vega Graphs?</label>
                 </div>
-                <div class="iblock">
-                    <span id="demo-status">Standing by.</span>
-                </div>
-                <div id="horizontal-section" style="display: none;">
-                    <div class="canvases" id="lossCanvas"></div>
-                    <div class="canvases" id="accuracyCanvas"></div>
-                </div>
-                <div id="evaluate">
-                    <div id="evaluate-table-title">Text Examples</div>
-                    <table id="evaluate-table">
-                        <tr>
-                            <th>data1</th>
-                            <th>data2</th>
-                            <th>data3</th>
-                            <th>data4</th>
-                            <th>data5</th>
-                            <th>data6</th>
-                            <th>data7</th>
-                            <th>data8</th>
-                            <th>data9</th>
-                            <th>data10</th>
-                            <th>data11</th>
-                            <th>data12</th>
-                            <th>data13</th>
-                            <th>data14</th>
-                            <th>data15</th>
-                            <th>data16</th>
-                            <th>data17</th>
-                            <th>data18</th>
-                            <th>data19</th>
-                            <th>data20</th>
-                            <th>data21</th>
-                            <th>data22</th>
-                            <th>data23</th>
-                            <th>data24</th>
-                            <!-- <th>data25</th>
+            </div>
+            <div class="iblock">
+                <span id="demo-status">Standing by.</span>
+            </div>
+            <div id="horizontal-section" style="display: none;">
+                <div class="canvases" id="lossCanvas"></div>
+                <div class="canvases" id="accuracyCanvas"></div>
+            </div>
+            <div id="evaluate">
+                <div id="evaluate-table-title">Text Examples</div>
+                <table id="evaluate-table">
+                    <tr>
+                        <th>data1</th>
+                        <th>data2</th>
+                        <th>data3</th>
+                        <th>data4</th>
+                        <th>data5</th>
+                        <th>data6</th>
+                        <th>data7</th>
+                        <th>data8</th>
+                        <th>data9</th>
+                        <th>data10</th>
+                        <th>data11</th>
+                        <th>data12</th>
+                        <th>data13</th>
+                        <th>data14</th>
+                        <th>data15</th>
+                        <th>data16</th>
+                        <th>data17</th>
+                        <th>data18</th>
+                        <th>data19</th>
+                        <th>data20</th>
+                        <th>data21</th>
+                        <th>data22</th>
+                        <th>data23</th>
+                        <th>data24</th>
+                        <!-- <th>data25</th>
                             <th>data26</th>
                             <th>data27</th>
                             <th>data28</th> -->
-                            <th>True class</th>
-                            <th>Predicted class</th>
-                            <th>Probabilities</th>
-                        </tr>
-                        <tbody id="evaluate-tbody">
-                            <tr>
-                                <td>
-                                    <input id="data1" value="90"> </td>
-                                <td>
-                                    <input id="data2" value="-88"> </td>
-                                <td>
-                                    <input id="data3" value="98"> </td>
-                                <td>
-                                    <input id="data4" value="-94"> </td>
-                                <td>
-                                    <input id="data5" value="103"> </td>
-                                <td>
-                                    <input id="data6" value="-106"> </td>
-                                <td>
-                                    <input id="data7" value="17"> </td>
-                                <td>
-                                    <input id="data8" value="-9"> </td>
-                                <td>
-                                    <input id="data9" value="65"> </td>
-                                <td>
-                                    <input id="data10" value="-44"> </td>
-                                <td>
-                                    <input id="data11" value="6"> </td>
-                                <td>
-                                    <input id="data12" value="-48"> </td>
-                                <td>
-                                    <input id="data13" value="0.2259"> </td>
-                                <td>
-                                    <input id="data14" value="0.2331"> </td>
-                                <td>
-                                    <input id="data15" value="0.3615"> </td>
-                                <td>
-                                    <input id="data16" value="0.3552"> </td>
-                                <td>
-                                    <input id="data17" value="0.5069"> </td>
-                                <td>
-                                    <input id="data18" value="0.5085"> </td>
-                                <td>
-                                    <input id="data19" value="0.1388"> </td>
-                                <td>
-                                    <input id="data20" value="0.1302"> </td>
-                                <td>
-                                    <input id="data21" value="0.383"> </td>
-                                <td>
-                                    <input id="data22" value="0.3689"> </td>
-                                <td>
-                                    <input id="data23" value="0.5681"> </td>
-                                <td>
-                                    <input id="data24" value="0.5769"> </td>
-                                <!-- <td>
+                        <th>True class</th>
+                        <th>Predicted class</th>
+                        <th>Probabilities</th>
+                    </tr>
+                    <tbody id="evaluate-tbody">
+                        <tr>
+                            <td>
+                                <input id="data1" value="90"> </td>
+                            <td>
+                                <input id="data2" value="-88"> </td>
+                            <td>
+                                <input id="data3" value="98"> </td>
+                            <td>
+                                <input id="data4" value="-94"> </td>
+                            <td>
+                                <input id="data5" value="103"> </td>
+                            <td>
+                                <input id="data6" value="-106"> </td>
+                            <td>
+                                <input id="data7" value="17"> </td>
+                            <td>
+                                <input id="data8" value="-9"> </td>
+                            <td>
+                                <input id="data9" value="65"> </td>
+                            <td>
+                                <input id="data10" value="-44"> </td>
+                            <td>
+                                <input id="data11" value="6"> </td>
+                            <td>
+                                <input id="data12" value="-48"> </td>
+                            <td>
+                                <input id="data13" value="0.2259"> </td>
+                            <td>
+                                <input id="data14" value="0.2331"> </td>
+                            <td>
+                                <input id="data15" value="0.3615"> </td>
+                            <td>
+                                <input id="data16" value="0.3552"> </td>
+                            <td>
+                                <input id="data17" value="0.5069"> </td>
+                            <td>
+                                <input id="data18" value="0.5085"> </td>
+                            <td>
+                                <input id="data19" value="0.1388"> </td>
+                            <td>
+                                <input id="data20" value="0.1302"> </td>
+                            <td>
+                                <input id="data21" value="0.383"> </td>
+                            <td>
+                                <input id="data22" value="0.3689"> </td>
+                            <td>
+                                <input id="data23" value="0.5681"> </td>
+                            <td>
+                                <input id="data24" value="0.5769"> </td>
+                            <!-- <td>
                                     <input id="data25" value="0.5769"> </td>
                                 <td>
                                     <input id="data26" value="0.5769"> </td>
@@ -235,29 +234,29 @@
                                     <input id="data27" value="0.5769"> </td>
                                 <td>
                                     <input id="data28" value="0.5769"> </td> -->
-                                <td></td>
-                                <td id="winner"></td>
-                                <td id="logits"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                            <td></td>
+                            <td id="winner"></td>
+                            <td id="logits"></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.9.0"></script>
-        <script src="https://cdn.jsdelivr.net/npm/vega@3.3.0/build/vega.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/vega-lite@2.3.1/build/vega-lite.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/vega-embed@3.5.0/build/vega-embed.min.js"></script>
-        <script>
-            var showGraphs = document.getElementById("showGraphs");
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.9.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega@3.3.0/build/vega.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@2.3.1/build/vega-lite.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@3.5.0/build/vega-embed.min.js"></script>
+    <script>
+        var showGraphs = document.getElementById("showGraphs");
 
-            function toggleGraph() {
-                if (showGraphs.checked) document.getElementById("horizontal-section").style.display = "block";
-                else document.getElementById("horizontal-section").style.display = "none";
-            }
-        </script>
-        <script src="data.js"></script>
-        <script src="main.js"></script>
-    </body>
+        function toggleGraph() {
+            if (showGraphs.checked) document.getElementById("horizontal-section").style.display = "block";
+            else document.getElementById("horizontal-section").style.display = "none";
+        }
+    </script>
+    <script src="data.js"></script>
+    <script src="main.js"></script>
+</body>
 
 </html>

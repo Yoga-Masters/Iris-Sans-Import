@@ -50,6 +50,7 @@
             databaseURL: "https://yoga-master-training-db.firebaseio.com",
             projectId: "yoga-master-training-db"
         });
+        var poseIndex;
         var db = firebase.database();
         var oldConsoleLog = console.log;
         window['console']['log'] = function() {
@@ -59,13 +60,12 @@
             }
             document.getElementById('demo-status').innerHTML += "<br>";
         };
-        var poseIndex;
-        var types = {};
-        var selectedType;
 
         function getTrainingData(cb) {
             db.ref("config").once("value", config => {
-                var tcnfg = config.val().training[config.val().training.config + "Training"];
+                config = config.val();
+                poseIndex = (Object.values(config.poseIndex)).sort().reduce((accumulator, currentValue, currentIndex, array) => { accumulator[Object.keys(config.poseIndex)[Object.values(config.poseIndex).indexOf(array[currentIndex])]] = array[currentIndex]; return accumulator; }, {});
+                var tcnfg = config.training[config.training.config + "Training"];
                 cb([SELECTED_CLASSES, SELECTED_DATA], [tcnfg.testSplit, tcnfg.learningRate, tcnfg.epochs, tcnfg.minAccuracy, tcnfg.maxLoss]);
             });
         }
@@ -105,6 +105,8 @@
                 var los = mdl.loss;
                 console.log("AFTER " + (Date.now() - time) + "MS, MAIN MODEL:" + model, "ACCURACY: " + acc + (acc >= tdbconfig[3] ? " → ✓" : " → ✖"), "LOSS: " + los + (los <= tdbconfig[4] ? " → ✓" : " → ✖"));
                 getConfidences(model, tdbdata[1][0].slice(0, -1)).then(confs => { // Making a prediction using the model and first row of tdata
+                    console.log("confs", confs);
+                    console.log("tdbdata[1][0].slice(0, -1)", tdbdata[1][0].slice(0, -1));
                     confs.push(Object.keys(poseIndex)[confs.indexOf(Math.max.apply({}, confs))]);
                     console.log("AFTER " + (Date.now() - time) + "MS, MAIN RUNNER 1: ", confs, tdbdata[1][0]);
                     console.log("Finially finished in " + (Date.now() - time) + "ms.");

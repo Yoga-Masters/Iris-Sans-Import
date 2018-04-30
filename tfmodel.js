@@ -31,6 +31,7 @@ function getTrainedModel(tData, config) { // Returns a trained model, takes care
 function getConfidences(model, data) {
     return new Promise(function(resolve) {
         predictOnManualInput(model, data, data.length, logits => {
+            console.log(logits);
             resolve(logits);
         });
     });
@@ -166,17 +167,12 @@ function plotLosses(lossValues, epoch, newTrainLoss) {
         'loss': newTrainLoss,
         'set': 'train'
     });
-    // lossValues.push({
-    //     'epoch': epoch,
-    //     'loss': newValidationLoss,
-    //     'set': 'validation'
-    // });
     vegaEmbed('#lossCanvas', {
         '$schema': 'https://vega.github.io/schema/vega-lite/v2.json',
         'data': {
             'values': lossValues
         },
-        'mark': 'line',
+        'mark': { "type": "line", "color": "#00ff00" },
         'encoding': {
             'x': {
                 'field': 'epoch',
@@ -185,11 +181,7 @@ function plotLosses(lossValues, epoch, newTrainLoss) {
             'y': {
                 'field': 'loss',
                 'type': 'quantitative'
-            },
-            'color': {
-                'field': 'set',
-                'type': 'nominal'
-            },
+            }
         }
     }, {});
 }
@@ -200,17 +192,12 @@ function plotAccuracies(accuracyValues, epoch, newTrainAccuracy) {
         'accuracy': newTrainAccuracy,
         'set': 'train'
     });
-    // accuracyValues.push({
-    //     'epoch': epoch,
-    //     'accuracy': newValidationAccuracy,
-    //     'set': 'validation'
-    // });
     vegaEmbed('#accuracyCanvas', {
         '$schema': 'https://vega.github.io/schema/vega-lite/v2.json',
         'data': {
             'values': accuracyValues
         },
-        'mark': 'line',
+        'mark': { "type": "line", "color": "#00ff00" },
         'encoding': {
             'x': {
                 'field': 'epoch',
@@ -219,11 +206,7 @@ function plotAccuracies(accuracyValues, epoch, newTrainAccuracy) {
             'y': {
                 'field': 'accuracy',
                 'type': 'quantitative'
-            },
-            'color': {
-                'field': 'set',
-                'type': 'nominal'
-            },
+            }
         }
     }, {});
 }

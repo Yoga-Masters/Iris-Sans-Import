@@ -212,9 +212,3 @@ function plotAccuracies(accuracyValues, epoch, newTrainAccuracy) {
         }
     }, {});
 }
-
-function toggleGraph() {
-    show = !show;
-    if (showGraphs.checked) document.getElementById("horizontal-section").style.display = "block";
-    else document.getElementById("horizontal-section").style.display = "none";
-}

@@ -74,7 +74,7 @@ function getPreppedTrainingData(testSplit, data, classes, numClasses) {
 }
 async function trainModel(xTrain, yTrain, xTest, yTest, params, cb) {
     var time = Date.now();
-    console.log("Training model @ " + (new Date(time)).toLocaleTimeString() + " on angles_magnitudes data. Training using a " + params.learningRate + " learning rate for " + params.epochs + " epochs; please wait...");
+    console.log("Training model @ " + (new Date(time)).toLocaleTimeString() + " on angles_magnitudes_positions data. Training using a " + params.learningRate + " learning rate for " + params.epochs + " epochs; please wait...");
     const model = tf.sequential();
     model.add(tf.layers.dense({
         units: 10,
@@ -98,8 +98,10 @@ async function trainModel(xTrain, yTrain, xTest, yTest, params, cb) {
         // validationData: [xTest, yTest],
         callbacks: {
             onEpochEnd: async (epoch, logs) => {
-                plotLosses(lossValues, epoch, logs.loss);
-                plotAccuracies(accuracyValues, epoch, logs.acc);
+                if (show) {
+                    plotLosses(lossValues, epoch, logs.loss);
+                    plotAccuracies(accuracyValues, epoch, logs.acc);
+                }
                 await tf.nextFrame();
             }
         }
@@ -172,7 +174,7 @@ function plotLosses(lossValues, epoch, newTrainLoss) {
         'data': {
             'values': lossValues
         },
-        'mark': { "type": "line", "color": "#00ff00" },
+        'mark': { "type": "line", "color": "#000000" },
         'encoding': {
             'x': {
                 'field': 'epoch',
@@ -197,7 +199,7 @@ function plotAccuracies(accuracyValues, epoch, newTrainAccuracy) {
         'data': {
             'values': accuracyValues
         },
-        'mark': { "type": "line", "color": "#00ff00" },
+        'mark': { "type": "line", "color": "#000000" },
         'encoding': {
             'x': {
                 'field': 'epoch',
@@ -209,4 +211,10 @@ function plotAccuracies(accuracyValues, epoch, newTrainAccuracy) {
             }
         }
     }, {});
+}
+
+function toggleGraph() {
+    show = !show;
+    if (showGraphs.checked) document.getElementById("horizontal-section").style.display = "block";
+    else document.getElementById("horizontal-section").style.display = "none";
 }

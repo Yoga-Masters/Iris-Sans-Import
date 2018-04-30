@@ -2,7 +2,6 @@
 <html>
 <!-- http-server -->
 <!-- browser-sync start --proxy 0.0.0.0:8080 --files "./**/*" -->
-
 <head>
     <title>Tensorflow Yoga Master Test Cases</title>
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
@@ -26,16 +25,27 @@
             color: #00ff00;
             overflow-x: hidden;
         }
+
+        #horizontal-section {
+            width: 100%;
+            overflow-x: auto;
+            background-color: white;
+        }
     </style>
 </head>
-
 <body>
     <h1>Yoga Masters Tensorflow Training &amp; Predicting Test</h1>
-    <div id="horizontal-section">
+    <hr>
+    <input type="checkbox" id="showGraphs" onchange="toggleGraph()" checked>
+    <label for="showGraphs">Show Vega Graphs?</label>
+    <div id="horizontal-section" style="display:block">
         <div class="canvases" id="lossCanvas"></div>
         <div class="canvases" id="accuracyCanvas"></div>
     </div>
-    <hr> <span id="demo-status">Open console for better logs; Loading... <br> <br> </span>
+    <hr>
+    <span id="demo-status">Open console for better logs; Loading...
+        <br>
+        <br> </span>
     <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.9.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega@3.3.0/build/vega.min.js"></script>
@@ -45,6 +55,9 @@
     <script src="tfmodel.js"></script>
     <script>
         // ============================= IGNORE SETUP CODE =============================
+        if (document.addEventListener) document.addEventListener("DOMContentLoaded", autorun, false);
+        else if (document.attachEvent) document.attachEvent("onreadystatechange", autorun);
+        else window.onload = autorun;
         firebase.initializeApp({
             apiKey: "AIzaSyBfzO0wkhLUX0sSKeQi1d7uMvvJrf7Ti4s",
             databaseURL: "https://yoga-master-training-db.firebaseio.com",
@@ -53,13 +66,20 @@
         var poseIndex;
         var db = firebase.database();
         var oldConsoleLog = console.log;
-        window['console']['log'] = function() {
-            for (var i = 0; i < arguments.length; i++) {
-                oldConsoleLog(arguments[i]);
-                document.getElementById('demo-status').innerHTML += (typeof arguments[i] === 'string' ? arguments[i] : JSON.stringify(arguments[i])) + "<br>";
-            }
-            document.getElementById('demo-status').innerHTML += "<br>";
-        };
+        var showGraphs;
+        var show = true;
+
+        function autorun() {
+            showGraphs = document.getElementById("showGraphs");
+            showGraphs.disabled = false;
+            window['console']['log'] = function() {
+                for (var i = 0; i < arguments.length; i++) {
+                    oldConsoleLog(arguments[i]);
+                    document.getElementById('demo-status').innerHTML += (typeof arguments[i] === 'string' ? arguments[i] : JSON.stringify(arguments[i])) + "<br>";
+                }
+                document.getElementById('demo-status').innerHTML += "<br>";
+            };
+        }
 
         function getTrainingData(cb) {
             db.ref("config").once("value", config => {
@@ -113,5 +133,4 @@
         });
     </script>
 </body>
-
 </html>

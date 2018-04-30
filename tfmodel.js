@@ -1,6 +1,6 @@
 //Two functions to use for the app below; one to train, one to predict
 function getTrainedModel(tData, config) { // Returns a trained model, takes care of chance of high loss by recursion
-    return new Promise(async function (resolve) {
+    return new Promise(async function(resolve) {
         const classes = tData[0];
         const numClasses = tData[0].length;
         const data = tData[1];
@@ -8,11 +8,18 @@ function getTrainedModel(tData, config) { // Returns a trained model, takes care
         await trainModel(xTrain, yTrain, xTest, yTest, {
             "epochs": config[2],
             "learningRate": config[1]
-        }, (model, accuracy, taccuracy, loss, tloss) => {
-            if (accuracy == 1 && taccuracy == 1 && loss < .1 && tloss < .1)
-                resolve(model);
+        }, (model, accuracy, loss) => {
+            // }, (model, accuracy, taccuracy, loss, tloss) => {
+            if (accuracy >= config[3] && loss <= config[4])
+                // if (accuracy == 1 && taccuracy == 1 && loss < .1 && tloss < .1)
+                resolve({
+                    "model": model,
+                    "accuracy": accuracy,
+                    "loss": loss
+                });
             else {
-                console.log("Model not good enough, training again: ", "accuracy: " + accuracy, "taccuracy: " + taccuracy, "loss: " + loss, "tloss: " + tloss);
+                console.log("Model not good enough, training again: ", "accuracy: " + accuracy + (accuracy >= config[3] ? " → ✓" : " → ✖"), "loss: " + loss + (loss <= config[4] ? " → ✓" : " → ✖"));
+                // console.log("Model not good enough, training again: ", "accuracy: " + accuracy, "taccuracy: " + taccuracy, "loss: " + loss, "tloss: " + tloss);
                 getTrainedModel(tData, config).then(mdl => {
                     resolve(mdl);
                 });
@@ -22,7 +29,7 @@ function getTrainedModel(tData, config) { // Returns a trained model, takes care
 }
 // Returns confidences using global model
 function getConfidences(model, data) {
-    return new Promise(function (resolve) {
+    return new Promise(function(resolve) {
         predictOnManualInput(model, data, data.length, logits => {
             resolve(logits);
         });
@@ -59,12 +66,11 @@ function getPreppedTrainingData(testSplit, data, classes, numClasses) {
         return [
             tf.concat(xTrains, concatAxis),
             tf.concat(yTrains, concatAxis),
-            tf.concat(xTests, concatAxis),
-            tf.concat(yTests, concatAxis)
+            // tf.concat(xTests, concatAxis),
+            // tf.concat(yTests, concatAxis)
         ];
     });
 }
-
 async function trainModel(xTrain, yTrain, xTest, yTest, params, cb) {
     var time = Date.now();
     console.log("Training model @ " + (new Date(time)).toLocaleTimeString() + " on angles_magnitudes data. Training using a " + params.learningRate + " learning rate for " + params.epochs + " epochs; please wait...");
@@ -75,7 +81,7 @@ async function trainModel(xTrain, yTrain, xTest, yTest, params, cb) {
         inputShape: [xTrain.shape[1]]
     }));
     model.add(tf.layers.dense({
-        units: 3,
+        units: yTrain.shape[1],
         activation: 'softmax'
     }));
     const optimizer = tf.train.adam(params.learningRate);
@@ -84,17 +90,22 @@ async function trainModel(xTrain, yTrain, xTest, yTest, params, cb) {
         loss: 'categoricalCrossentropy',
         metrics: ['accuracy'],
     });
+    const lossValues = [];
+    const accuracyValues = [];
     await model.fit(xTrain, yTrain, {
         epochs: params.epochs,
-        validationData: [xTest, yTest],
+        // validationData: [xTest, yTest],
         callbacks: {
             onEpochEnd: async (epoch, logs) => {
+                plotLosses(lossValues, epoch, logs.loss);
+                plotAccuracies(accuracyValues, epoch, logs.acc);
                 await tf.nextFrame();
             }
         }
     }).then((value) => {
         console.log("Model training complete @ " + (new Date(Date.now())).toLocaleTimeString() + ", in " + (Date.now() - time) + " ms; AKA: " + convertMS(Date.now() - time).m + " mins " + convertMS(Date.now() - time).s + " seconds.");
-        cb(model, value.history.acc.pop(), value.history.val_acc.pop(), value.history.loss.pop(), value.history.val_loss.pop());
+        // cb(model, value.history.acc.pop(), value.history.val_acc.pop(), value.history.loss.pop(), value.history.val_loss.pop());
+        cb(model, value.history.acc.pop(), value.history.loss.pop());
     });
 }
 
@@ -137,4 +148,82 @@ function convertMS(ms) {
         m: m,
         s: s
     };
+}
+
+function isJsonObject(obj) {
+    try {
+        JSON.parse(JSON.stringify(obj));
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
+//All extra functions used for tensorflow library
+// function plotLosses(lossValues, epoch, newTrainLoss, newValidationLoss) {
+function plotLosses(lossValues, epoch, newTrainLoss) {
+    lossValues.push({
+        'epoch': epoch,
+        'loss': newTrainLoss,
+        'set': 'train'
+    });
+    // lossValues.push({
+    //     'epoch': epoch,
+    //     'loss': newValidationLoss,
+    //     'set': 'validation'
+    // });
+    vegaEmbed('#lossCanvas', {
+        '$schema': 'https://vega.github.io/schema/vega-lite/v2.json',
+        'data': {
+            'values': lossValues
+        },
+        'mark': 'line',
+        'encoding': {
+            'x': {
+                'field': 'epoch',
+                'type': 'ordinal'
+            },
+            'y': {
+                'field': 'loss',
+                'type': 'quantitative'
+            },
+            'color': {
+                'field': 'set',
+                'type': 'nominal'
+            },
+        }
+    }, {});
+}
+// function plotAccuracies(accuracyValues, epoch, newTrainAccuracy, newValidationAccuracy) {
+function plotAccuracies(accuracyValues, epoch, newTrainAccuracy) {
+    accuracyValues.push({
+        'epoch': epoch,
+        'accuracy': newTrainAccuracy,
+        'set': 'train'
+    });
+    // accuracyValues.push({
+    //     'epoch': epoch,
+    //     'accuracy': newValidationAccuracy,
+    //     'set': 'validation'
+    // });
+    vegaEmbed('#accuracyCanvas', {
+        '$schema': 'https://vega.github.io/schema/vega-lite/v2.json',
+        'data': {
+            'values': accuracyValues
+        },
+        'mark': 'line',
+        'encoding': {
+            'x': {
+                'field': 'epoch',
+                'type': 'ordinal'
+            },
+            'y': {
+                'field': 'accuracy',
+                'type': 'quantitative'
+            },
+            'color': {
+                'field': 'set',
+                'type': 'nominal'
+            },
+        }
+    }, {});
 }

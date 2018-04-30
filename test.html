@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <!-- http-server -->
-<!-- browser-sync start --port 8080 --files "./**/*" -->
+<!-- browser-sync start --proxy 0.0.0.0:8080 --files "./**/*" -->
 
 <head>
     <title>Tensorflow Yoga Master Test Cases</title>
@@ -18,91 +18,96 @@
         }
 
         body {
-            /* width: 100%; */
+            width: 100%;
             height: 100%;
-            margin: 20px;
+            padding: 20px;
+            box-sizing: border-box;
             background-color: rgba(0, 0, 0, .9);
             color: #00ff00;
-            overflow: hidden;
+            overflow-x: hidden;
         }
     </style>
 </head>
 
 <body>
     <h1>Yoga Masters Tensorflow Training &amp; Predicting Test</h1>
-    <hr>
-    <span id="demo-status">Open console for better logs; Loading...
-        <br>
-        <br> </span>
+    <div id="horizontal-section">
+        <div class="canvases" id="lossCanvas"></div>
+        <div class="canvases" id="accuracyCanvas"></div>
+    </div>
+    <hr> <span id="demo-status">Open console for better logs; Loading... <br> <br> </span>
     <script src="https://www.gstatic.com/firebasejs/4.13.0/firebase.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.9.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega@3.3.0/build/vega.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@2.3.1/build/vega-lite.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@3.5.0/build/vega-embed.min.js"></script>
+    <script src="testdata.js"></script>
     <script src="tfmodel.js"></script>
     <script>
         // ============================= IGNORE SETUP CODE =============================
         firebase.initializeApp({
             apiKey: "AIzaSyBfzO0wkhLUX0sSKeQi1d7uMvvJrf7Ti4s",
-            authDomain: "yoga-master-training-db.firebaseapp.com",
             databaseURL: "https://yoga-master-training-db.firebaseio.com",
-            projectId: "yoga-master-training-db",
-            storageBucket: "yoga-master-training-db.appspot.com",
-            messagingSenderId: "743195328789"
+            projectId: "yoga-master-training-db"
         });
         var db = firebase.database();
         var oldConsoleLog = console.log;
-        window['console']['log'] = function () {
+        window['console']['log'] = function() {
             for (var i = 0; i < arguments.length; i++) {
                 oldConsoleLog(arguments[i]);
-                document.getElementById('demo-status').innerHTML += arguments[i] + "<br>";
+                document.getElementById('demo-status').innerHTML += (typeof arguments[i] === 'string' ? arguments[i] : JSON.stringify(arguments[i])) + "<br>";
             }
             document.getElementById('demo-status').innerHTML += "<br>";
         };
+        var poseIndex;
+        var types = {};
+        var selectedType;
 
         function getTrainingData(cb) {
-            db.ref("frames").once("value", snap => {
-                var types = {
-                    "datatype4": "ANGLES_MAGNITUDES"
-                };
-                var data = snap.val();
-                var trainingData = {};
-                for (const type in types) trainingData[type] = [];
-                for (const key of Object.keys(data))
-                    for (const type in types)
-                        if (data[key][type] && !(data[key][type] == 0 || data[key][type] == 1)) {
-                            data[key][type].push(poseIndex[data[key].pose]);
-                            trainingData[type].push(data[key][type]);
-                        }
-                // trainingData["datatype4"].push([90, -88, 98, -94, 103, -106, 17, -9, 65, -44, 6, -48, 0.2259, 0.2331, 0.3615, 0.3552, 0.5069, 0.5085, 0.1388, 0.1302, 0.383, 0.3689, 0.5681, 0.5769, 3]); // UNCOMMENT TO ATTEMPT TRAINING WITH "NONE" LABEL
-                for (const type in types) trainingData[type + "_CLASSES"] = Object.keys(poseIndex);
-                cb([trainingData[selectedType + "_CLASSES"], trainingData[selectedType]]);
+            db.ref("config").once("value", config => {
+                var tcnfg = config.val().training[config.val().training.config + "Training"];
+                cb([SELECTED_CLASSES, SELECTED_DATA], [tcnfg.testSplit, tcnfg.learningRate, tcnfg.epochs, tcnfg.minAccuracy, tcnfg.maxLoss]);
             });
         }
+        // function getTrainingData(cb) {
+        //     db.ref("config").once("value", config => {
+        //         config = config.val();
+        //         selectedType = config.training.data;
+        //         poseIndex = (Object.values(config.poseIndex)).sort().reduce((accumulator, currentValue, currentIndex, array) => {
+        //             accumulator[Object.keys(config.poseIndex)[Object.values(config.poseIndex).indexOf(array[currentIndex])]] = array[currentIndex];
+        //             return accumulator;
+        //         }, {});
+        //         types[selectedType] = config.types[selectedType];
+        //         var tcnfg = config.training[config.training.config + "Training"];
+        //         db.ref("frames").once("value", snap => {
+        //             var data = snap.val();
+        //             var trainingData = {};
+        //             for (const type in types) trainingData[type] = [];
+        //             for (const key of Object.keys(data))
+        //                 for (const type in types)
+        //                     if (data[key][type] && !(data[key][type] == 0 || data[key][type] == 1)) {
+        //                         data[key][type].push(poseIndex[data[key].pose]);
+        //                         trainingData[type].push(data[key][type]);
+        //                     }
+        //             for (const type in types) trainingData[type + "_CLASSES"] = Object.keys(poseIndex);
+        //             cb([trainingData[selectedType + "_CLASSES"], trainingData[selectedType]], [tcnfg.testSplit, tcnfg.learningRate, tcnfg.epochs, tcnfg.minAccuracy, tcnfg.maxLoss]);
+        //         });
+        //     });
+        // }
         // ============================ MODEL TRAINING CODE ============================
-        // trainingConsts: Test split, 0 for maximum training; learning rate & epochs
-        const slowTrainingConfig = [0.01, 0.001, 2000]; // Slow but almost guarenteed optimal learning with low loss
-        const fastTrainingConfig = [0.01, 0.03, 125]; // Rapid quickfire learning with chance of high loss
-        var selectedType = "datatype4"; // The datatype to train on, in this case Angles+Magnitudes
         var time = Date.now(); // The start time of everything
-        var poseIndex = { // All labels
-            "warriorii": 0,
-            "tree": 1,
-            "triangle": 2,
-            // "none": 3 // UNCOMMENT TO ATTEMPT TRAINING WITH "NONE" LABEL
-        };
         let model; // A global variable for holding the model
-        getTrainingData(tdbdata => { // Downloading data live to train on
-            console.log("AFTER " + (Date.now() - time) + "MS, MAIN DOWNLOAD_DATA: ", tdbdata);
-            getTrainedModel(tdbdata, fastTrainingConfig).then(mdl => { // Calling the train model function and logging the results
-                model = mdl;
-                console.log("AFTER " + (Date.now() - time) + "MS, MAIN MODEL:", model);
+        getTrainingData((tdbdata, tdbconfig) => { // Downloading data live to train on
+            console.log("AFTER " + (Date.now() - time) + "MS, MAIN DOWNLOAD_DATA: ", tdbdata[0], tdbdata[1].length + " rows");
+            getTrainedModel(tdbdata, tdbconfig).then(mdl => { // Calling the train model function and logging the results
+                model = mdl.model;
+                var acc = mdl.accuracy;
+                var los = mdl.loss;
+                console.log("AFTER " + (Date.now() - time) + "MS, MAIN MODEL:" + model, "ACCURACY: " + acc + (acc >= tdbconfig[3] ? " → ✓" : " → ✖"), "LOSS: " + los + (los <= tdbconfig[4] ? " → ✓" : " → ✖"));
                 getConfidences(model, tdbdata[1][0].slice(0, -1)).then(confs => { // Making a prediction using the model and first row of tdata
                     confs.push(Object.keys(poseIndex)[confs.indexOf(Math.max.apply({}, confs))]);
-                    console.log("AFTER " + (Date.now() - time) + "MS, MAIN RUNNER: ", confs,
-                        tdbdata[1][0]);
-                });
-                getConfidences(model, tdbdata[1][tdbdata[1].length - 1].slice(0, -1)).then(confs => { //Another prediction w/ last row of tdata
-                    confs.push(Object.keys(poseIndex)[confs.indexOf(Math.max.apply({}, confs))]);
-                    console.log("AFTER " + (Date.now() - time) + "MS, MAIN RUNNER: ", confs,
-                        tdbdata[1][tdbdata[1].length - 1]);
+                    console.log("AFTER " + (Date.now() - time) + "MS, MAIN RUNNER 1: ", confs, tdbdata[1][0]);
+                    console.log("Finially finished in " + (Date.now() - time) + "ms.");
                 });
             });
         });

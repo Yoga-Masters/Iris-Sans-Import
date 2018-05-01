@@ -31,7 +31,6 @@ function getTrainedModel(tData, config) { // Returns a trained model, takes care
 function getConfidences(model, data) {
     return new Promise(function(resolve) {
         predictOnManualInput(model, data, data.length, logits => {
-            console.log(logits);
             resolve(logits);
         });
     });
